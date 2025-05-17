@@ -14,24 +14,6 @@ Before running the project, ensure you have the following installed:
   - [Elsevier Dataset](https://elsevier.digitalcommonsdata.com/datasets/btchxktzyw/7)
   - Recommended naming: `Table_1_Authors_singleyr_{year}_pubs_since_1788_wopp_extracted_202408.xlsx` (e.g., `Table_1_Authors_singleyr_2020_pubs_since_1788_wopp_extracted_202408.xlsx`).
 
-## Project Structure
-
-```
-TOP-2-Scientist-Analysis/
-├── frontend/
-│   ├── AnalysisPage.html
-│   ├── index.html
-│   ├── searchpage.html
-│   ├── vite.config.js
-│   └── (images, CSS, JS files)
-├── ranking.py
-├── Table_1_Authors_singleyr_2020_pubs_since_1788_wopp_extracted_202408.xlsx
-├── Table_1_Authors_singleyr_2021_pubs_since_1788_wopp_extracted_202408.xlsx
-├── Table_1_Authors_singleyr_2022_pubs_since_1788_wopp_extracted_202408.xlsx
-├── Table_1_Authors_singleyr_2023_pubs_since_1788_wopp_extracted_202408.xlsx
-└── README.md
-```
-
 ## Setup and Running the Project
 
 ### Step 1: Run the Backend (`ranking.py`)
@@ -187,68 +169,7 @@ If you want to extend the frontend with React (not required for the base project
      ```
    - See the [React migration guide](#react-migration) for details (to be added based on your needs).
 
-### Troubleshooting
 
-- **Backend Issues**:
-  - **Excel files not found**: Ensure the Excel files are in the project root and match the expected names.
-  - **API not running**: Check `http://127.0.0.1:8000/docs`. Verify `uvicorn` logs for errors.
-  - **CORS errors**: Add CORS middleware to `ranking.py`:
-    ```python
-    from fastapi.middleware.cors import CORSMiddleware
-    app = FastAPI()
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    ```
-- **Frontend Issues**:
-  - **Vite fails to start**: Run `npm install` again or clear npm cache:
-    ```bash
-    npm cache clean --force
-    ```
-  - **Charts not loading**: Check browser console (`F12 > Console`) for errors. Verify `yearData[2021]`:
-    ```javascript
-    console.log('2021 data:', yearData[2021]);
-    ```
-- **2021 Data Missing**:
-  - Verify `Table_1_Authors_singleyr_2021_pubs_since_1788_wopp_extracted_202408.xlsx` contains `nc9619 (ns)`, `h19 (ns)`, etc.:
-    ```bash
-    head -n 1 Table_1_Authors_singleyr_2021_pubs_since_1788_wopp_extracted_202408.xlsx
-    ```
-
-### VSCode Setup
-
-- **Recommended Extensions**:
-  - **Python** (`ms-python.python`): Python support.
-  - **ESLint** (`dbaeumer.vscode-eslint`): JavaScript linting.
-  - **Prettier** (`esbenp.prettier-vscode`): Code formatting.
-  - Install via `Extensions` (Ctrl+Shift+X).
-- **Run Commands**:
-  - Use the integrated terminal (`Ctrl+``) for `uvicorn` and `npm run dev`.
-- **Debugging**:
-  - Check backend logs in the `uvicorn` terminal.
-  - Use browser DevTools (`F12`) for frontend errors.
-
-### Contributing
-
-Contributions are welcome! To contribute:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/new-feature`).
-3. Commit changes (`git commit -m 'Add new feature'`).
-4. Push to the branch (`git push origin feature/new-feature`).
-5. Open a Pull Request.
-
-### License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-### Contact
-
-For questions or support, please open an issue on the [GitHub repository](https://github.com/your-repo/TOP-2-Scientist-Analysis).
-```
 
    
    
