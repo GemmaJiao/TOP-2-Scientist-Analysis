@@ -1,4 +1,3 @@
-```markdown
 # TOP-2-Scientist-Analysis
 
 This project provides a web-based tool to analyze and visualize scientist publication data from Elsevier's dataset (2020–2023). It includes a FastAPI backend (`ranking.py`) to process data and a frontend (HTML, CSS, JavaScript) to display visualizations. React is optional for advanced frontend development.
