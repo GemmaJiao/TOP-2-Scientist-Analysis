@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Searching Results</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f4f4;
+      padding: 50px;
+    }
+    .authorCard {
+      border: 1px solid #aaa;
+      margin: 10px;
+      padding: 10px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .authorCard button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .authorCard button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    window.onload = () => {
+      const result = JSON.parse(sessionStorage.getItem("searchResult"));
+
+      if (!result) {
+        document.body.innerHTML = "<h2>No search result.</h2>";
+        return;
+      }
+
+      if (result.type === "not_found") {
+        document.body.innerHTML = "<h2>No author found.</h2>";
+      } else if (result.type === "exact") {
+        document.body.innerHTML = "<h2>Found author successfully:</h2>";
+        const opt = result.author;
+        renderAuthorCard({
+          firstName: opt.first_name,
+          lastName: opt.last_name,
+          cntry: opt.cntry,
+          inst_name: opt.institution || "Unknown"
+        });
+      } else if (result.type === "ambiguous") {
+        document.body.innerHTML = "<h2>Multiple authors found. Click to view analysis:</h2>";
+        result.options.forEach(opt => {
+          renderAuthorCard({
+            firstName: opt.first_name,
+            lastName: opt.last_name,
+            cntry: opt.cntry,
+            inst_name: opt.inst_name || "Unknown"
+          });
+        });
+      }
+    };
+
+    function renderAuthorCard(author) {
+      const card = document.createElement("div");
+      card.className = "authorCard";
+      card.innerHTML = `
+        <strong>${author.firstName} ${author.lastName}</strong><br>
+        Country: ${author.cntry}<br>
+        Institution: ${author.inst_name}<br>
+        <button>View Analysis</button>
+      `;
+      card.querySelector("button").onclick = () => {
+        const params = {
+          first_name: author.firstName,
+          last_name: author.lastName,
+          cntry: author.cntry,
+          inst_name: author.inst_name
+        };
+        console.log('Saving analysisParams to sessionStorage:', params);
+        sessionStorage.setItem("analysisParams", JSON.stringify(params));
+        window.open("AnalysisPage.html", "_blank");
+      };
+      document.body.appendChild(card);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/jpeg" href="/image.jpg" />
+  <link rel="stylesheet" href="/src/css/firstPage.css">
+  <link rel="stylesheet" href="/src/css/nav-bar.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOP-2 Scientists</title>
+</head>
+<body>
+  
+
+  <div style="margin-top: 50px; background-image: url('/src/assets/image.png'); background-size: cover; background-position: center; width: 100%; height: 800px; position: relative;">
+    <div class="searchingBox1" onclick="replaceWithInput(this, 'firstName')">First Name</div>
+    <div class="searchingBox2" onclick="replaceWithInput(this, 'lastName')">Last Name</div>
+    <div class="searchingBox3" onclick="replaceWithInput(this, 'country')">Country</div>
+    <div class="searchingBox4" onclick="submitSearch()">🔍</div>
+  </div>
+
+
+  <script>
+    const searchData = {
+      firstName: '',
+      lastName: '',
+      country: ''
+    };
+
+    function replaceWithInput(element, field) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = element.className + " searchInput";
+      input.placeholder = element.textContent;
+      input.value = "";
+      input.oninput = (e) => {
+        searchData[field] = e.target.value;
+      };
+      element.replaceWith(input);
+      input.focus();
+    }
+
+    async function submitSearch() {
+      const first = searchData.firstName.trim();
+      const last = searchData.lastName.trim();
+      const country = searchData.country.trim();
+
+      if (!first && !last && country) {
+        alert("Please input First Name or Last Name at least");
+        return;
+      }
+
+      const postData = {
+        first_name: first,
+        last_name: last,
+        country: country
+      };
+
+      try {
+        const response = await fetch("http://localhost:8000/search_author", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(postData)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Search response:', result);
+
+        if (result.type === 'not_found') {
+          alert("No authors found. Please try different parameters.");
+          return;
+        }
+
+        if (result.type === 'exact') {
+          const params = {
+            first_name: result.author.first_name,
+            last_name: result.author.last_name,
+            cntry: result.author.cntry,
+            inst_name: result.author.institution || "Unknown"
+          };
+          console.log('Saving exact match to sessionStorage:', params);
+          sessionStorage.setItem("analysisParams", JSON.stringify(params));
+          window.location.href = "AnalysisPage.html";
+          return;
+        }
+
+        if (result.type === 'ambiguous') {
+          console.log('Saving ambiguous results to sessionStorage:', result);
+          sessionStorage.setItem("searchResult", JSON.stringify(result));
+          window.open("SearchingPage.html", "_blank");
+        }
+
+      } catch (err) {
+        console.error("Search failed:", err);
+        alert("Search failed. Please try again.");
+      }
+    }
+  </script>
+</body>
+</html>

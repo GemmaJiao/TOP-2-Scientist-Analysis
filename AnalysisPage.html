@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 80px 20px 20px;
+            background: #f5f5f5;
+        }
+        .navbar {
+            background: #333;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+        .navbar a {
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .navbar a:hover {
+            background: #555;
+        }
+        .navbar a.active {
+            background: #007BFF;
+        }
+        .content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .section {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section.active {
+            display: block;
+        }
+        .loading, .error {
+            color: #555;
+            font-style: italic;
+            text-align: center;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .suggestions {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+        }
+        .suggestions ul {
+            list-style: none;
+            padding: 0;
+        }
+        .chart-container {
+            margin: 20px 0;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .metrics-table th, .metrics-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .metrics-table th {
+            background: #f2f2f2;
+        }
+        .back-link {
+            display: block;
+            margin-bottom: 20px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#visualizations" class="active">Visualizations</a>
+        <a href="#year2020">2020 Metrics</a>
+        <a href="#year2021">2021 Metrics</a>
+        <a href="#year2022">2022 Metrics</a>
+        <a href="#year2023">2023 Metrics</a>
+        <a href="#understanding">Understanding the Metrics</a>
+    </div>
+    <div class="content">
+        <a href="index.html" class="back-link">Back to Search</a>
+        <h1>Author Analysis</h1>
+        <div id="visualizations" class="section active">
+            <h2>Visualizations</h2>
+            <div class="chart-container">
+                <h3>Rankings (2020-2023)</h3>
+                <canvas id="rankChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Total Publications (2020-2023)</h3>
+                <canvas id="publicationsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>H-Index (2020-2023)</h3>
+                <canvas id="hIndexChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Composite Score (2020-2023)</h3>
+                <canvas id="compositeChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Citations (2020-2023)</h3>
+                <canvas id="citationsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Publication Types (2020-2023)</h3>
+                <canvas id="publicationTypesChart"></canvas>
+            </div>
+        </div>
+        <div id="year2020" class="section">
+            <h2>2020 Metrics</h2>
+            <div id="metrics2020"></div>
+        </div>
+        <div id="year2021" class="section">
+            <h2>2021 Metrics</h2>
+            <div id="metrics2021"></div>
+        </div>
+        <div id="year2022" class="section">
+            <h2>2022 Metrics</h2>
+            <div id="metrics2022"></div>
+        </div>
+        <div id="year2023" class="section">
+            <h2>2023 Metrics</h2>
+            <div id="metrics2023"></div>
+        </div>
+        <div id="understanding" class="section">
+            <h2>Understanding the Metrics</h2>
+            <p><strong>Rank (Self-Citations Excluded):</strong> Rank based on composite score (no self-citations).</p>
+            <p><strong>Rank (All):</strong> Rank based on composite score (all citations).</p>
+            <p><strong>Total Publications:</strong> Number of papers published (1960-year).</p>
+            <p><strong>Publication Years:</strong> Range of years the author has published.</p>
+            <p><strong>Self-Citation Percentage:</strong> Percentage of citations that are self-citations.</p>
+            <p><strong>H-Index (ns):</strong> H-index excluding self-citations.</p>
+            <p><strong>Composite Score (ns):</strong> Composite metric based on publications and citations.</p>
+            <p><strong>Citations (ns):</strong> Total citations excluding self-citations.</p>
+            <p><strong>Citations:</strong> Total citations including self-citations.</p>
+            <p><strong>Publication Types:</strong> Categories include Total Publications, Single+First+Last Authored, Single+First Authored, and Single Authored papers.</p>
+        </div>
+        <div id="analysis-result" class="loading">Loading analysis data...</div>
+    </div>
+
+    <script>
+        async function initAnalysis() {
+            const resultDiv = document.getElementById('analysis-result');
+            resultDiv.innerHTML = '<p class="loading">Loading analysis data...</p>';
+
+            const params = JSON.parse(sessionStorage.getItem("analysisParams"));
+            console.log('sessionStorage analysisParams:', params);
+            if (!params || !params.first_name || !params.last_name || !params.cntry || !params.inst_name) {
+                const missing = [];
+                if (!params) missing.push('all parameters');
+                else {
+                    if (!params.first_name) missing.push('first_name');
+                    if (!params.last_name) missing.push('last_name');
+                    if (!params.cntry) missing.push('cntry');
+                    if (!params.inst_name) missing.push('inst_name');
+                }
+                resultDiv.innerHTML = `
+                    <p class="error">Error: Missing required parameters (${missing.join(', ')}). 
+                    Please return to the <a href="index.html">search page</a>.</p>
+                `;
+                return;
+            }
+
+            const { first_name, last_name, cntry, inst_name } = params;
+            console.log(`Request parameters: first_name=${first_name}, last_name=${last_name}, cntry=${cntry}, inst_name=${inst_name}`);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/generate_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        first_name,
+                        last_name,
+                        cntry,
+                        inst_name,
+                        years: [2020, 2021, 2022, 2023]
+                    })
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `HTTP error! Status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail?.message || errorMessage;
+                        const suggestions = errorData.detail?.suggestions || [];
+                        if (suggestions.length > 0) {
+                            errorMessage += `<div class="suggestions"><p>Possible matching authors:</p><ul>` + 
+                                            suggestions.map(s => `<li>${s.name} (${s.cntry}, ${s.institution})</li>`).join('') + 
+                                            `</ul></div>`;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse error response:', e);
+                        errorMessage += ` (Response text: ${await response.text()})`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                if (!data.author || !data.analysis) {
+                    throw new Error("Invalid response: Missing author or analysis data");
+                }
+
+                // sjow empty data
+                const author = data.author;
+                const analysis = data.analysis;
+                const allYears = [2020, 2021, 2022, 2023];
+                const yearData = {};
+                allYears.forEach(year => {
+                    yearData[year] = analysis[year] || {
+                        total_publications: 0,
+                        rank_ns: 0,
+                        rank: 0,
+                        self_citation_rate: 0,
+                        h_index_ns: 0,
+                        cites_ns: 0,
+                        cites: 0,
+                        composite_ns: 0,
+                        main_field: "Unknown",
+                        subfield: "Unknown",
+                        npsfl: 0,
+                        cpsf: 0,
+                        nps: 0,
+                        firstyr: "N/A",
+                        lastyr: "N/A",
+                        summary: "No data available."
+                    };
+                });
+
+                
+                const validYears = allYears.filter(year => {
+                    const metrics = yearData[year];
+                    return metrics.total_publications > 0 || 
+                           metrics.cites_ns > 0 || 
+                           metrics.cites > 0 || 
+                           metrics.h_index_ns > 0 || 
+                           metrics.composite_ns > 0 || 
+                           metrics.rank_ns > 0 || 
+                           metrics.rank > 0;
+                });
+
+                if (validYears.length === 0) {
+                    throw new Error("No valid data available for any year.");
+                }
+
+               
+                validYears.forEach(year => {
+                    const metrics = yearData[year];
+                    if (metrics.total_publications < metrics.npsfl || 
+                        metrics.npsfl < metrics.cpsf || 
+                        metrics.cpsf < metrics.nps || 
+                        metrics.nps < 0) {
+                        console.warn(`Invalid Publication Types data for ${year}: `, {
+                            total_publications: metrics.total_publications,
+                            npsfl: metrics.npsfl,
+                            cpsf: metrics.cpsf,
+                            nps: metrics.nps
+                        });
+                        
+                        metrics.nps = Math.max(0, metrics.nps);
+                        metrics.cpsf = Math.max(metrics.nps, metrics.cpsf);
+                        metrics.npsfl = Math.max(metrics.cpsf, metrics.npsfl);
+                        metrics.total_publications = Math.max(metrics.npsfl, metrics.total_publications);
+                    }
+                });
+
+                // Rankings
+                const rankChart = new Chart(document.getElementById('rankChart'), {
+                    type: 'line',
+                    data: {
+                        labels: validYears,
+                        datasets: [
+                            {
+                                label: 'Rank (No Self)',
+                                data: validYears.map(year => yearData[year].rank_ns || 0),
+                                borderColor: '#42A5F5',
+                                backgroundColor: '#42A5F5',
+                                fill: false,
+                                pointRadius: 5
+                            },
+                            {
+                                label: 'Rank (All)',
+                                data: validYears.map(year => yearData[year].rank || 0),
+                                borderColor: '#FF7043',
+                                backgroundColor: '#FF7043',
+                                fill: false,
+                                pointRadius: 5
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: { 
+                                beginAtZero: false,
+                                reverse: true,
+                                title: { display: true, text: 'Rank (Lower is Better)' }
+                            },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+
+                // total pubs
+                const publicationsChart = new Chart(document.getElementById('publicationsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: validYears,
+                        datasets: [{
+                            label: 'Total Publications',
+                            data: validYears.map(year => yearData[year].total_publications || 0),
+                            backgroundColor: '#42A5F5',
+                            borderColor: '#1E88E5',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Publications' } },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+
+                // H-Index
+                const hIndexChart = new Chart(document.getElementById('hIndexChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: validYears,
+                        datasets: [{
+                            label: 'H-Index (ns)',
+                            data: validYears.map(year => yearData[year].h_index_ns || 0),
+                            backgroundColor: '#66BB6A',
+                            borderColor: '#43A047',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Index Value' } },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+
+                // Composite Score
+                const compositeChart = new Chart(document.getElementById('compositeChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: validYears,
+                        datasets: [{
+                            label: 'Composite Score (ns)',
+                            data: validYears.map(year => yearData[year].composite_ns || 0),
+                            backgroundColor: '#AB47BC',
+                            borderColor: '#8E24AA',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Score' } },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+
+                // Citations
+                const citationsChart = new Chart(document.getElementById('citationsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: validYears,
+                        datasets: [
+                            {
+                                label: 'Citations (No Self)',
+                                data: validYears.map(year => yearData[year].cites_ns || 0),
+                                backgroundColor: '#EF5350',
+                                borderColor: '#D32F2F',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Citations (All)',
+                                data: validYears.map(year => yearData[year].cites || 0),
+                                backgroundColor: '#FF7043',
+                                borderColor: '#F4511E',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Citations' } },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+
+                // Publication Types
+                const publicationTypesChart = new Chart(document.getElementById('publicationTypesChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: validYears,
+                        datasets: [
+                            {
+                                label: 'Single',
+                                data: validYears.map(year => yearData[year].nps || 0),
+                                backgroundColor: '#FFCDD2',
+                                stack: 'Stack0',
+                                originalData: validYears.map(year => yearData[year].nps || 0)
+                            },
+                            {
+                                label: 'Single+First',
+                                data: validYears.map(year => Math.max(0, (yearData[year].cpsf || 0) - (yearData[year].nps || 0))),
+                                backgroundColor: '#C8E6C9',
+                                stack: 'Stack0',
+                                originalData: validYears.map(year => yearData[year].cpsf || 0)
+                            },
+                            {
+                                label: 'Single+First+Last',
+                                data: validYears.map(year => Math.max(0, (yearData[year].npsfl || 0) - (yearData[year].cpsf || 0))),
+                                backgroundColor: '#FFCCBC',
+                                stack: 'Stack0',
+                                originalData: validYears.map(year => yearData[year].npsfl || 0)
+                            },
+                            {
+                                label: 'Total Pubs',
+                                data: validYears.map(year => Math.max(0, (yearData[year].total_publications || 0) - (yearData[year].npsfl || 0))),
+                                backgroundColor: '#B3E5FC',
+                                stack: 'Stack0',
+                                originalData: validYears.map(year => yearData[year].total_publications || 0)
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                title: { display: true, text: 'Publications' },
+                                stacked: true
+                            },
+                            x: { 
+                                title: { display: true, text: 'Year' },
+                                stacked: true
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.dataset.originalData[context.dataIndex]}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // different year modulo
+                allYears.forEach(year => {
+                    const metricsDiv = document.getElementById(`metrics${year}`);
+                    const yearMetrics = yearData[year];
+                    metricsDiv.innerHTML = `
+                        <h3>${author.first_name} ${author.last_name} (${author.cntry})</h3>
+                        <p><strong>Institution:</strong> ${author.inst_name}</p>
+                        <p><strong>Main Field:</strong> ${yearMetrics.main_field || "Unknown"}</p>
+                        <p><strong>Subfield:</strong> ${yearMetrics.subfield || "Unknown"}</p>
+                        <table class="metrics-table">
+                            <tr><th>Metric</th><th>Value</th></tr>
+                            <tr><td>Rank (Self-Citations Excluded)</td><td>${yearMetrics.rank_ns}</td></tr>
+                            <tr><td>Rank (All)</td><td>${yearMetrics.rank}</td></tr>
+                            <tr><td>Total Publications</td><td>${yearMetrics.total_publications}</td></tr>
+                            <tr><td>Publication Years</td><td>${yearMetrics.firstyr} - ${yearMetrics.lastyr}</td></tr>
+                            <tr><td>Self-Citation Percentage</td><td>${(yearMetrics.self_citation_rate * 100).toFixed(2)}%</td></tr>
+                            <tr><td>H-Index (ns)</td><td>${yearMetrics.h_index_ns}</td></tr>
+                            <tr><td>Citations (ns)</td><td>${yearMetrics.cites_ns}</td></tr>
+                            <tr><td>Citations</td><td>${yearMetrics.cites}</td></tr>
+                            <tr><td>Composite Score (ns)</td><td>${yearMetrics.composite_ns}</td></tr>
+                        </table>
+                        <h4>Summary Report</h4>
+                        <p>${yearMetrics.summary}</p>
+                    `;
+                });
+
+                resultDiv.innerHTML = '';
+            } catch (error) {
+                console.error('Analysis error:', error);
+                resultDiv.innerHTML = `<p class="error">Analysis error: ${error.message}</p>`;
+            }
+        }
+
+        // nav bar
+        document.querySelectorAll('.navbar a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(targetId).classList.add('active');
+                document.querySelectorAll('.navbar a').forEach(a => {
+                    a.classList.remove('active');
+                });
+                link.classList.add('active');
+            });
+        });
+
+        window.onload = initAnalysis;
+    </script>
+</body>
+</html>
