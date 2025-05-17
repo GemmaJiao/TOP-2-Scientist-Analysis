@@ -1,0 +1,36 @@
+.searchingBox1{
+    position: absolute;
+    top: 650px;
+    left: 400px;
+    display: inline-block;
+    background-color: whitesmoke;
+    padding: 1px 150px 1px 1px;
+    font-size: 20px;
+}
+.searchingBox2{
+    position: absolute;
+    top: 650px;
+    left: 750px;
+    display: inline-block;
+    background-color: whitesmoke;
+    padding: 1px 150px 1px 1px;
+    font-size: 20px;
+}
+.searchingBox3{
+    position: absolute;
+    top: 650px;
+    left: 1100px;
+    display: inline-block;
+    background-color: whitesmoke;
+    padding: 1px 120px 1px 1px;
+    font-size: 20px;
+}
+.searchingBox4{
+    position: absolute;
+    top: 650px;
+    left: 1305px;
+    display: inline-block;
+    background-color: whitesmoke;
+    padding: 1px;
+    font-size: 20px;
+}
